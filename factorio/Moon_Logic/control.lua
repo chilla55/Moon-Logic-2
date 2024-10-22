@@ -318,20 +318,42 @@ end
 
 -- ----- MLC (+ sandbox) init / remove -----
 
+local Terminals = {
+	red = {
+		output = defines.wire_connector_id.combinator_output_red,
+		input = defines.wire_connector_id.combinator_input_red
+	},
+	green = {
+		output = defines.wire_connector_id.combinator_output_green,
+		input = defines.wire_connector_id.combinator_input_green
+	}
+}
+
 -- Create/connect/remove invisible constant-combinator entities for wire outputs
-local function out_wire_connect(e, wire)
+local function out_wire_connect(e, color)
 	local core = e.surface.create_entity{
 		name='mlc-core', position=e.position,
 		force=e.force, create_build_effect_smoke=false }
-	e.connect_neighbour{ wire=wire, target_entity=core,
-		source_circuit_id=defines.circuit_connector_id.combinator_output }
+
+	local terminals = Terminals[color]
+	local connectors = {
+		transmitter = e.get_wire_connector( terminals.output ),
+		receiver = core.get_wire_connector( terminals.input )
+	}
+
+	local success = connectors.transmitter.connect_to( connectors.receiver, false, defines.wire_origin.script )
+
+	if not success then
+		error(('Failed to connect %s wire outputs to core'):format(color))
+	end
+
 	core.destructible = false
 	return core
 end
 local function out_wire_connect_both(e)
 	return
-		out_wire_connect(e, defines.wire_type.red),
-		out_wire_connect(e, defines.wire_type.green)
+		out_wire_connect(e, "red"),
+		out_wire_connect(e, "green")
 end
 local function out_wire_clear_mlc(mlc)
 	for _, e in ipairs{'core', 'out_red', 'out_green'} do
