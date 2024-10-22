@@ -94,10 +94,10 @@ data:extend{
 		name = 'mlc',
 		enabled = false,
 		ingredients = {
-			{'arithmetic-combinator', 4},
-			{'decider-combinator', 2},
-			{'advanced-circuit', 5} },
-		result = 'mlc' },
+			{ type = 'item', name = 'arithmetic-combinator', amount = 1 },
+			{ type = 'item', name = 'decider-combinator', amount = 1 },
+			{ type = 'item', name = 'advanced-circuit', amount = 5 } },
+		results = {{ type = 'item', name = 'mlc', amount = 1 }} },
 
 	-- Signal
 	{ type = 'virtual-signal',
