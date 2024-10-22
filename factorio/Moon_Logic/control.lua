@@ -933,13 +933,13 @@ end
 local function update_signal_types_table()
 	storage.signals, storage.signals_short = {}, {} -- short=false for ambiguous ones
 	local sig_str, sig
-	for k, sig in pairs(game.virtual_signal_prototypes) do
+	for k, sig in pairs(prototypes.virtual_signal) do
 		if sig.special then goto skip end -- anything/everything/each
 		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k}
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
-	for t, protos in pairs{ fluid=game.fluid_prototypes,
-			item=game.get_filtered_item_prototypes{{filter='flag', flag='hidden', invert=true}} } do
+	for t, protos in pairs{ fluid=prototypes.fluid,
+			item=prototypes.get_item_filtered{{filter='flag', flag='hidden', invert=true}} } do
 		for k, _ in pairs(protos) do
 			sig_str, sig = cn_sig_str(t, k), {type=t, name=k}
 			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
