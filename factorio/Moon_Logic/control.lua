@@ -5,7 +5,7 @@ local guis = require('gui')
 
 
 -- Stores code and built environments as {code=..., ro=..., vars=...}
--- This stuff can't be global, built locally, might be cause for desyncs
+-- This stuff can't be global (kept in `storage`?), built locally, might be cause for desyncs
 local Combinators = {}
 local CombinatorEnv = {} -- to avoid self-recursive tables
 
@@ -54,7 +54,7 @@ local function cn_sig_str(t, name)
 	-- Translates name or type/name or signal to its type-prefixed string-id
 	if not name then
 		if type(t) == 'string' then
-			name = global.signals_short[t]
+			name = storage.signals_short[t]
 			if name == false then return end -- ambiguous name
 			return name or t
 		else t, name = t.type, t.name end
@@ -65,7 +65,7 @@ end
 local function cn_sig_name(sig_str)
 	-- Returns abbreviated signal name without prefix
 	local k = sig_str:sub(2)
-	local sig_str2 = global.signals_short[k]
+	local sig_str2 = storage.signals_short[k]
 	if sig_str2 == false then return sig_str
 	elseif sig_str2 == sig_str then return k
 	elseif not sig_str2 then error(('MOD BUG - abbreviation for invalid signal string: %s'):format(sig_str))
@@ -73,15 +73,15 @@ local function cn_sig_name(sig_str)
 end
 
 local function cn_sig(k, err_level)
-	local sig = global.signals_short[k]
-	if type(sig) ~= false then sig = global.signals[sig or k] end
+	local sig = storage.signals_short[k]
+	if type(sig) ~= false then sig = storage.signals[sig or k] end
 	if sig then return sig end
 	if not err_level then return end
 	if sig == false then
 		local m = {}
 		for _,t in ipairs{'virtual', 'item', 'fluid'} do
 			sig = cn_sig_str(t, k)
-			if global.signals[sig] then table.insert(m, sig) end
+			if storage.signals[sig] then table.insert(m, sig) end
 		end
 		error(( 'Ambiguous short signal name "%s",'..
 			' matching: %s' ):format(k, table.concat(m, ' ')), err_level)
@@ -95,9 +95,9 @@ local function cn_wire_signals(e, wire_type, canon)
 		.get_circuit_network(wire_type, defines.circuit_connector_id.combinator_input)
 	for _, sig in pairs(cn and cn.signals or {}) do
 		-- Check for name=nil SignalIDs (dunno what these are), and items w/ flag=hidden
-		if global.signals_short[sig.signal.name] == nil then goto skip end
+		if storage.signals_short[sig.signal.name] == nil then goto skip end
 		if canon then k = cn_sig_str(sig.signal)
-		else k = global.signals_short[sig.signal.name]
+		else k = storage.signals_short[sig.signal.name]
 			and sig.signal.name or cn_sig_str(sig.signal) end
 		res[k] = sig.count
 	::skip:: end
@@ -151,7 +151,7 @@ local function cn_output_table_len(out) -- rawlen won't skip 0 and doesn't work 
 end
 local function cn_output_table_value(out, k)
 	if k == '__self' then return end -- for table.deepcopy to tell this apart from factorio object
-	return rawget(out, k) or rawget(out, global.signals_short[k]) or 0
+	return rawget(out, k) or rawget(out, storage.signals_short[k]) or 0
 end
 local function cn_output_table_replace(out, new_tbl)
 	-- Note: validation for sig_names/values is done when output table is used later
@@ -264,7 +264,7 @@ local function mlc_update_output(mlc, output_raw)
 		if not (ecc and ecc.valid) then goto skip end
 		n, n_max = 1, ecc.signals_count
 		for sig, v in pairs(signals[k]) do
-			ps[n] = {signal=global.signals[sig], count=v, index=n}
+			ps[n] = {signal=storage.signals[sig], count=v, index=n}
 			n = n + 1
 			if n > n_max then
 				table.insert( errors,
@@ -350,14 +350,14 @@ local function mlc_log(...) log(...) end -- to avoid logging func code
 
 local function mlc_init(e)
 	-- Inits *local* mlc_env state for combinator - builds env, evals lua code, etc
-	-- *global* state will be used for init values if it exists, otherwise empty defaults
-	-- Lua env for code is composed from: sandbox_env_base + local mlc_env proxies + global mlc.vars
+	-- *storage* (previously `global`) state will be used for init values if it exists, otherwise empty defaults
+	-- Lua env for code is composed from: sandbox_env_base + local mlc_env proxies + global (storage) mlc.vars
 	if not e.valid then return end
 	local uid = e.unit_number
 	if Combinators[uid] then error('Double-init for existing combinator unit_number') end
 	Combinators[uid] = {} -- some state (e.g. loaded func) has to be local
-	if not global.combinators[uid] then global.combinators[uid] = {e=e} end
-	local mlc_env, mlc = Combinators[uid], global.combinators[uid]
+	if not storage.combinators[uid] then storage.combinators[uid] = {e=e} end
+	local mlc_env, mlc = Combinators[uid], storage.combinators[uid]
 
 	if not sandbox_env_base._init then
 		-- This is likely to cause mp desyncs
@@ -366,7 +366,7 @@ local function mlc_init(e)
 			print=sandbox_game_print, print_color=game.print }
 		sandbox_env_base._api = { game=game, script=script,
 			remote=remote, commands=commands, settings=settings,
-			rcon=rcon, rendering=rendering, global=global, defines=defines }
+			rcon=rcon, rendering=rendering, global=storage, defines=defines }
 		sandbox_env_pairs_mt_iter[cn_input_signal_get] = true
 		sandbox_env_base._init = true
 	end
@@ -420,10 +420,10 @@ end
 local function mlc_remove(uid, keep_entities, to_be_mined)
 	guis.close(uid)
 	if not keep_entities then
-		local mlc = out_wire_clear_mlc(global.combinators[uid] or {})
+		local mlc = out_wire_clear_mlc(storage.combinators[uid] or {})
 		if not to_be_mined and mlc.e and mlc.e.valid then mlc.e.destroy() end
 	end
-	Combinators[uid], CombinatorEnv[uid], global.combinators[uid], global.guis[uid] = nil
+	Combinators[uid], CombinatorEnv[uid], storage.combinators[uid], storage.guis[uid] = nil
 end
 
 
@@ -489,7 +489,7 @@ local function on_setup_blueprint(ev)
 		' entities to ones on the map, combinator settings WILL NOT be stored in this blueprint!' ) end
 
 	for bp_idx, uid in pairs(bp_mlc_uids)
-		do bp.set_blueprint_entity_tag(bp_idx, 'mlc_code', global.combinators[uid].code) end
+		do bp.set_blueprint_entity_tag(bp_idx, 'mlc_code', storage.combinators[uid].code) end
 end
 
 script.on_event(defines.events.on_player_setup_blueprint, on_setup_blueprint)
@@ -498,7 +498,7 @@ local function on_built(ev)
 	local e = ev.created_entity or ev.entity -- latter for revive event
 	if not e.valid then return end
 	local mlc = out_wire_connect_mlc{e=e}
-	global.combinators[e.unit_number] = mlc
+	storage.combinators[e.unit_number] = mlc
 
 	-- Blueprints - try to restore settings from tags stored there on setup,
 	--  or fallback to old method with uid stored in a constant for simple copy-paste if tags fail
@@ -508,7 +508,7 @@ local function on_built(ev)
 		local uid_src = ecc_params.first_constant or 0
 		if uid_src < 0 then uid_src = uid_src + 0x100000000 end -- int -> uint conversion
 		if uid_src ~= 0 then
-			local mlc_src = global.combinators[uid_src]
+			local mlc_src = storage.combinators[uid_src]
 			if mlc_src then mlc.code = mlc_src.code else
 				mlc.code = ('-- No code was stored in blueprint and'..
 					' Moon Logic [%s] is unavailable for OTA code update'):format(uid_src) end
@@ -524,18 +524,18 @@ local function on_entity_copy(ev)
 	if ev.destination.name == 'mlc-core' then return ev.destination.destroy() end -- for clone event
 	if not (ev.source.name == 'mlc' and ev.destination.name == 'mlc') then return end
 	local uid_src, uid_dst = ev.source.unit_number, ev.destination.unit_number
-	local mlc_old_outs = global.combinators[uid_dst]
+	local mlc_old_outs = storage.combinators[uid_dst]
 	mlc_remove(uid_dst, true)
 	if mlc_old_outs
 		then mlc_old_outs = {mlc_old_outs.out_red, mlc_old_outs.out_green}
 		-- For cloned entities, mlc-core's might not yet exist - create/register them here, remove clones above
 		-- It'd give zero-outputs for one tick, but probably not an issue, easier to handle it like this
 		else mlc_old_outs = {out_wire_connect_both(ev.destination)} end
-	global.combinators[uid_dst] = tdc(global.combinators[uid_src])
-	local mlc_dst, mlc_src = global.combinators[uid_dst], global.combinators[uid_src]
+	storage.combinators[uid_dst] = tdc(storage.combinators[uid_src])
+	local mlc_dst, mlc_src = storage.combinators[uid_dst], storage.combinators[uid_src]
 	mlc_dst.e, mlc_dst.next_tick, mlc_dst.core = ev.destination, 0
 	mlc_dst.out_red, mlc_dst.out_green = table.unpack(mlc_old_outs)
-	guis.history_insert(mlc_src, mlc_src.code or '', global.guis[uid_dst])
+	guis.history_insert(mlc_src, mlc_src.code or '', storage.guis[uid_dst])
 end
 
 script.on_event(
@@ -567,7 +567,7 @@ local function format_mlc_err_msg(mlc)
 end
 
 local function signal_icon_tag(sig)
-	local sig = global.signals[sig]
+	local sig = storage.signals[sig]
 	if not sig then return '' end
 	if sig.type == 'virtual' then return '[virtual-signal='..sig.name..'] ' end
 	if game.is_valid_sprite_path(sig.type..'/'..sig.name)
@@ -577,8 +577,8 @@ end
 local function update_signals_in_guis()
 	local gui_flow, label, mlc, cb, sig, mlc_out, mlc_out_idx, mlc_out_err
 	local colors = {red={1,0.3,0.3}, green={0.3,1,0.3}}
-	for uid, gui_t in pairs(global.guis) do
-		mlc = global.combinators[uid]
+	for uid, gui_t in pairs(storage.guis) do
+		mlc = storage.combinators[uid]
 		if not (mlc and mlc.e.valid) then mlc_remove(uid); goto skip end
 		gui_flow = gui_t.signal_pane
 		if not (gui_flow and gui_flow.valid) then goto skip end
@@ -616,7 +616,7 @@ local function update_signals_in_guis()
 		end ::cb_slots_end:: end
 		table.sort(mlc_out_idx)
 		for val, k in pairs(mlc_out_idx) do
-			val, sig, label = mlc_out[k], global.signals[k].name, signal_icon_tag(k)
+			val, sig, label = mlc_out[k], storage.signals[k].name, signal_icon_tag(k)
 			if val['red'] == val['green'] then
 				gui_flow.add{ type='label', name='out-'..sig,
 					caption=('[out] %s%s = %s'):format(label, sig, val['red'] or 0) }
@@ -735,7 +735,7 @@ local function run_moon_logic_tick(mlc, mlc_env, tick)
 	if mlc.vars.ota_update_from_uid then
 		local mlc_src = mlc.vars.ota_update_from_uid
 		mlc_src = mlc_src ~= mlc_env._uid and
-			global.combinators[mlc.vars.ota_update_from_uid]
+			storage.combinators[mlc.vars.ota_update_from_uid]
 		if mlc_src and mlc_src.code ~= mlc.code
 			then guis.save_code(mlc_env._uid, mlc_src.code) end
 		mlc.vars.ota_update_from_uid = nil
@@ -746,7 +746,7 @@ local function on_tick(ev)
 	local tick = ev.tick
 	if sandbox_env_base.game then sandbox_env_base.game.tick = tick end
 
-	for uid, mlc in pairs(global.combinators) do
+	for uid, mlc in pairs(storage.combinators) do
 		local mlc_env = Combinators[uid]
 		if not mlc_env then mlc_env = mlc_init(mlc.e) end
 		if not ( mlc_env and mlc.e.valid
@@ -771,7 +771,7 @@ local function on_tick(ev)
 		end
 	::skip:: end
 
-	if next(global.guis)
+	if next(storage.guis)
 			and game.tick % conf.gui_signals_update_interval == 0
 		then update_signals_in_guis() end
 end
@@ -782,7 +782,7 @@ script.on_event(defines.events.on_tick, on_tick)
 -- ----- GUI events and entity interactions -----
 
 function load_code_from_gui(code, uid) -- note: in global _ENV, used from gui.lua
-	local mlc, mlc_env = global.combinators[uid], Combinators[uid]
+	local mlc, mlc_env = storage.combinators[uid], Combinators[uid]
 	if not ( mlc and mlc.e.valid
 			and mlc.out_red.valid and mlc.out_green.valid )
 		then return mlc_remove(uid) end
@@ -796,7 +796,7 @@ function load_code_from_gui(code, uid) -- note: in global _ENV, used from gui.lu
 end
 
 function clear_outputs_from_gui(uid) -- note: in global _ENV, used from gui.lua
-	local mlc, mlc_env = global.combinators[uid], Combinators[uid]
+	local mlc, mlc_env = storage.combinators[uid], Combinators[uid]
 	if not (mlc and mlc_env) then return end
 	cn_output_table_replace(mlc_env._out)
 	mlc_update_output(mlc, mlc_env._out)
@@ -807,11 +807,11 @@ script.on_event(defines.events.on_gui_opened, function(ev)
 	local player = game.players[ev.player_index]
 	local e = player.opened
 	if not (e and e.name == 'mlc') then return end
-	if not global.combinators[e.unit_number] then
+	if not storage.combinators[e.unit_number] then
 		player.opened = nil
 		return console_warn(player, 'BUG: Combinator #'..e.unit_number..' is not registered with mod code')
 	end
-	local gui_t = global.guis[e.unit_number]
+	local gui_t = storage.guis[e.unit_number]
 	if not gui_t then guis.open(player, e)
 	elseif player.index == gui_t.mlc_gui.player_index then
 		-- This can happen when clicking same mlc again with code box focused
@@ -841,7 +841,7 @@ if conf.code_history_enabled -- this adds a lot of unpleasant lag to editing tex
 
 local function get_active_gui()
 	local uid, gui_t
-	for uid_chk, gui_t_chk in pairs(global.guis) do
+	for uid_chk, gui_t_chk in pairs(storage.guis) do
 		if not uid
 			then uid, gui_t = uid_chk, gui_t_chk
 			else uid, gui_t = nil; break end
@@ -857,19 +857,19 @@ end)
 script.on_event('mlc-code-undo', function(ev)
 	local uid, gui_t = get_active_gui()
 	if not gui_t then return end
-	local mlc = global.combinators[gui_t.uid]
+	local mlc = storage.combinators[gui_t.uid]
 	if mlc then guis.history_restore(gui_t, mlc, -1) end
 end)
 
 script.on_event('mlc-code-redo', function(ev)
 	local uid, gui_t = get_active_gui()
 	if not gui_t then return end
-	local mlc = global.combinators[gui_t.uid]
+	local mlc = storage.combinators[gui_t.uid]
 	if mlc then guis.history_restore(gui_t, mlc, 1) end
 end)
 
 script.on_event('mlc-code-commit', function(ev)
-	local uid, gui_t = next(global.guis)
+	local uid, gui_t = next(storage.guis)
 	if not uid then return end
 	guis.save_code(uid)
 	guis.close(uid)
@@ -878,7 +878,7 @@ end)
 script.on_event('mlc-code-close', function(ev)
 	guis.vars_window_toggle(ev.player_index, false)
 	guis.help_window_toggle(ev.player_index, false)
-	local uid, gui_t = next(global.guis)
+	local uid, gui_t = next(storage.guis)
 	if not uid then return end
 	guis.close(uid)
 end)
@@ -901,7 +901,7 @@ local remote_err = function(msg, ...) for n, p in pairs(game.players)
 	do p.print(('Moon-Logic remote-call error: '..msg):format(...), {1,1,0}) end end
 remote.add_interface('mlc', {run = function(uid_raw, count)
 	local uid = tonumber(uid_raw)
-	local mlc, mlc_env = global.combinators[uid], Combinators[uid]
+	local mlc, mlc_env = storage.combinators[uid], Combinators[uid]
 	if not mlc or not mlc_env then
 		return remote_err('cannot find combinator with uid=%s', uid_raw) end
 	local err_n, st, err, err_last = 0
@@ -921,29 +921,29 @@ local function strict_mode_enable()
 	if strict_mode then return end
 	setmetatable(_ENV, {
 		__newindex = function(self, key, value)
-			error('\n\n[ENV Error] Forbidden global *write*:\n'
+			error('\n\n[ENV Error] Forbidden global _ENV *write*:\n'
 				..serpent.line{key=key or '<nil>', value=value or '<nil>'}..'\n', 2) end,
 		__index = function(self, key)
 			if key == 'game' then return end -- used in utils.log check
-			error('\n\n[ENV Error] Forbidden global *read*:\n'
+			error('\n\n[ENV Error] Forbidden global _ENV *read*:\n'
 				..serpent.line{key=key or '<nil>'}..'\n', 2) end })
 	strict_mode = true
 end
 
 local function update_signal_types_table()
-	global.signals, global.signals_short = {}, {} -- short=false for ambiguous ones
+	storage.signals, storage.signals_short = {}, {} -- short=false for ambiguous ones
 	local sig_str, sig
 	for k, sig in pairs(game.virtual_signal_prototypes) do
 		if sig.special then goto skip end -- anything/everything/each
 		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k}
-		global.signals_short[k], global.signals[sig_str] = sig_str, sig
+		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=game.fluid_prototypes,
 			item=game.get_filtered_item_prototypes{{filter='flag', flag='hidden', invert=true}} } do
 		for k, _ in pairs(protos) do
 			sig_str, sig = cn_sig_str(t, k), {type=t, name=k}
-			global.signals_short[k] = global.signals_short[k] == nil and sig_str or false
-			global.signals[sig_str] = sig
+			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
+			storage.signals[sig_str] = sig
 	end end
 end
 
@@ -957,7 +957,7 @@ end
 script.on_init(function()
 	strict_mode_enable()
 	update_signal_types_table()
-	for k, _ in pairs(tt('combinators presets guis guis_player')) do global[k] = {} end
+	for k, _ in pairs(tt('combinators presets guis guis_player')) do storage[k] = {} end
 end)
 
 script.on_configuration_changed(function(data) -- migration
@@ -992,5 +992,5 @@ end)
 script.on_load(function() strict_mode_enable() end)
 
 
--- Activate Global Variable Viewer (gvv) mod, if installed/enabled - https://mods.factorio.com/mod/gvv
+-- Activate Global (Storage) Variable Viewer (gvv) mod, if installed/enabled - https://mods.factorio.com/mod/gvv
 if script.active_mods['gvv'] then require('__gvv__.gvv')() end
