@@ -41,7 +41,7 @@ for prop, sprites in pairs(mlc) do
 		sprites[dir] = spec
 		if spec.filename ~= '__base__/graphics/entity/combinator/combinator-displays.png'
 			then error('decider-combinator display symbols sprite sheet incompatibility detected') end
-		spec.filename = png('mlc-displays')
+		spec.filename = png('mlc-displays.v2')
 		spec.shift = table.deepcopy(decider.greater_symbol_sprites[dir].shift)
 end ::skip:: end
 
