@@ -84,8 +84,7 @@ data:extend{
 		name = 'mlc',
 		icon_size = 64,
 		icon = png('mlc-item'),
-		subgroup = mods.SchallCircuitGroup
-			and 'circuit-combinator' or 'circuit-network',
+		subgroup = 'circuit-network',
 		order = 'c[combinators]-bb[mlc]',
 		place_result = 'mlc',
 		stack_size = 50 },
