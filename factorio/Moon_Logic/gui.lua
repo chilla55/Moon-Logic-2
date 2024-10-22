@@ -100,7 +100,7 @@ local function vars_window_update(player, uid, pause_update)
 		gui_st.style = gui_paused and 'green_button' or 'button'
 		gui_st.caption = gui_paused and 'Unpause' or 'Pause'
 	end
-	local mlc, vars_box = global.combinators[uid], gui['mlc-vars-scroll']['mlc-vars-box']
+	local mlc, vars_box = storage.combinators[uid], gui['mlc-vars-scroll']['mlc-vars-box']
 	if gui_paused and vars_box.read_only then
 		vars_box.selectable, vars_box.read_only = true, false
 		vars_box.tooltip =
@@ -131,15 +131,15 @@ local function vars_window_switch_or_toggle(pn, uid, paused, toggle_on)
 	local player, gui_k = game.players[pn], 'vars.'..pn
 	local gui_exists = player.gui.screen['mlc-vars']
 	if gui_exists then
-		if toggle_on or (toggle_on == nil and global.guis_player[gui_k] ~= uid) then
-			global.guis_player[gui_k] = uid
+		if toggle_on or (toggle_on == nil and storage.guis_player[gui_k] ~= uid) then
+			storage.guis_player[gui_k] = uid
 			return vars_window_update(player, uid, paused)
 		elseif not toggle_on then return gui_exists.destroy() end
 	elseif toggle_on == false then return end -- force off toggle
 
 	local dw, dh, dsf = player.display_resolution.width,
 		player.display_resolution.height, 1 / player.display_scale
-	global.guis_player[gui_k] = uid
+	storage.guis_player[gui_k] = uid
 	local gui = player.gui.screen.add{ type='frame',
 		name='mlc-vars', caption='', direction='vertical' }
 	gui.location = {math.max(50, (dw - 800) * dsf), 45 * dsf}
@@ -233,7 +233,7 @@ end
 
 local function create_gui(player, entity)
 	local uid = entity.unit_number
-	local mlc = global.combinators[uid]
+	local mlc = storage.combinators[uid]
 	local mlc_err = mlc.err_parse or mlc.err_run
 	local dw, dh, dsf = player.display_resolution.width,
 		player.display_resolution.height, 1 / player.display_scale
@@ -300,7 +300,7 @@ local function create_gui(player, entity)
 	-- MT column-1: preset buttons at the top
 	for n=0, 19 do set_preset_btn_state(
 		elc(top_btns, {type='button', name='mlc-preset-'..n, caption=n, direction='horizontal'}),
-		global.presets[n] ) end
+		storage.presets[n] ) end
 
 	-- MT column-1: code textbox
 	elc( mt_left, {type='text-box', name='mlc-code', text=mlc.code or ''},
@@ -334,12 +334,12 @@ local function find_gui(ev)
 	-- Finds uid and gui table for specified event-target element
 	if ev.entity and ev.entity.valid then
 		local uid = ev.entity.unit_number
-		local gui_t = global.guis[uid]
+		local gui_t = storage.guis[uid]
 		if gui_t then return uid, gui_t end
 	end
 	local el, el_chk = ev.element
 	if not el then return end
-	for uid, gui_t in pairs(global.guis) do
+	for uid, gui_t in pairs(storage.guis) do
 		el_chk = gui_t.el_map[el.index]
 		if el_chk and el_chk == el then return uid, gui_t end
 	end
@@ -348,20 +348,20 @@ end
 local guis = {}
 
 function guis.open(player, e)
-	local uid_old = global.guis_player[player.index]
+	local uid_old = storage.guis_player[player.index]
 	if uid_old then player.opened = guis.close(uid_old) end
 	local gui_t = create_gui(player, e)
-	global.guis[e.unit_number] = gui_t
+	storage.guis[e.unit_number] = gui_t
 	player.opened = gui_t.mlc_gui
-	global.guis_player[player.index] = e.unit_number
+	storage.guis_player[player.index] = e.unit_number
 	return gui_t
 end
 
 function guis.close(uid)
-	local gui_t = global.guis[uid]
+	local gui_t = storage.guis[uid]
 	local gui = gui_t and (gui_t.mlc_gui or gui_t.gui)
 	if gui then gui.destroy() end
-	global.guis[uid] = nil
+	storage.guis[uid] = nil
 end
 
 function guis.history_insert(mlc, code, gui_t)
@@ -396,7 +396,7 @@ function guis.history_restore(gui_t, mlc, offset)
 end
 
 function guis.save_code(uid, code)
-	local gui_t, mlc = global.guis[uid], global.combinators[uid]
+	local gui_t, mlc = storage.guis[uid], storage.combinators[uid]
 	if not mlc then return end
 	if gui_t then
 		code = code_error_highlight(code or gui_t.mlc_code.text)
@@ -407,7 +407,7 @@ function guis.save_code(uid, code)
 end
 
 function guis.update_error_highlight(uid, mlc, err)
-	local gui_t = global.guis[uid]
+	local gui_t = storage.guis[uid]
 	if not gui_t then return end
 	gui_t.mlc_code.text = code_error_highlight(
 		gui_t.mlc_code.text, err or mlc.err_parse or mlc.err_run )
@@ -417,7 +417,7 @@ function guis.on_gui_text_changed(ev)
 	if ev.element.name ~= 'mlc-code' then return end
 	local uid, gui_t = find_gui(ev)
 	if not uid then return end
-	local mlc = global.combinators[uid]
+	local mlc = storage.combinators[uid]
 	if not mlc then return end
 	guis.history_insert(mlc, ev.element.text, gui_t)
 end
@@ -425,7 +425,7 @@ end
 function guis.on_gui_click(ev)
 	local el = ev.element
 
-	-- Separate "help" and "vars" windows, not tracked in globals, unlike main MLC guis
+	-- Separate "help" and "vars" windows, not tracked in globals (storage), unlike main MLC guis
 	if el.name == 'mlc-help-close' then return el.parent.destroy()
 	elseif el.name == 'mlc-vars-close' then
 		return (el.parent.parent or el.parent).destroy()
@@ -435,7 +435,7 @@ function guis.on_gui_click(ev)
 
 	local uid, gui_t = find_gui(ev)
 	if not uid then return end
-	local mlc = global.combinators[uid]
+	local mlc = storage.combinators[uid]
 	if not mlc then return guis.close(uid) end
 	local el_id = el.name
 	local preset_n = tonumber(el_id:match('^mlc%-preset%-(%d+)$'))
@@ -468,16 +468,16 @@ function guis.on_gui_click(ev)
 
 	elseif preset_n then
 		if ev.button == defines.mouse_button_type.left then
-			if global.presets[preset_n] then
-				gui_t.mlc_code.text = global.presets[preset_n]
+			if storage.presets[preset_n] then
+				gui_t.mlc_code.text = storage.presets[preset_n]
 				guis.history_insert(mlc, gui_t.mlc_code.text, gui_t)
 			else
-				global.presets[preset_n] = gui_t.mlc_code.text
-				set_preset_btn_state(el, global.presets[preset_n])
+				storage.presets[preset_n] = gui_t.mlc_code.text
+				set_preset_btn_state(el, storage.presets[preset_n])
 			end
 		elseif ev.button == rmb then
-			global.presets[preset_n] = nil
-			set_preset_btn_state(el, global.presets[preset_n])
+			storage.presets[preset_n] = nil
+			set_preset_btn_state(el, storage.presets[preset_n])
 		end
 
 	elseif el_id == 'mlc-back' then
@@ -511,7 +511,7 @@ function guis.help_window_toggle(pn, toggle_on)
 end
 
 function guis.vars_window_update(pn, uid)
-	local player, vars_uid = game.players[pn], global.guis_player['vars.'..pn]
+	local player, vars_uid = game.players[pn], storage.guis_player['vars.'..pn]
 	if not player or vars_uid ~= uid then return end
 	vars_window_update(player, uid)
 end
@@ -519,7 +519,7 @@ end
 function guis.vars_window_toggle(pn, toggle_on)
 	local gui = game.players[pn].gui.screen['mlc-gui']
 	local uid, gui_t = find_gui{element=gui}
-	if not uid then uid = global.guis_player['vars.'..pn] end
+	if not uid then uid = storage.guis_player['vars.'..pn] end
 	if not uid then return end
 	vars_window_switch_or_toggle(pn, uid, nil, toggle_on)
 end
