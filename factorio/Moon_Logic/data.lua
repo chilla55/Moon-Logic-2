@@ -18,7 +18,7 @@ mlc.icon_mipmaps = 0
 mlc.minable = {mining_time=0.2, result='mlc'}
 mlc.circuit_wire_max_distance = 7 -- 9 in regular combinators
 mlc.max_health = 250 -- 150 for arithmetic/decider
-mlc.active_energy_usage = '6KW' -- base=1KW, lamp=5KW
+mlc.active_energy_usage = '6kW' -- base=1KW, lamp=5KW
 
 -- *_box, *_sound, damaged_trigger_effect - same
 
