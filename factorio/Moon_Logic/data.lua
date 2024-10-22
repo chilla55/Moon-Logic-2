@@ -22,29 +22,27 @@ mlc.active_energy_usage = '6kW' -- base=1KW, lamp=5KW
 
 -- *_box, *_sound, damaged_trigger_effect - same
 
--- Spritesheet here has all same offsets and dimensions as hr version, so copy and change filename
+-- Spritesheet here has all same offsets and dimensions as normal (previously hr) version, so copy and change filename
 mlc.sprites = table.deepcopy(decider.sprites)
 for k, spec in pairs(mlc.sprites) do
 	for n, layer in pairs(spec.layers) do
-		layer, layer.hr_version = layer.hr_version -- only use hr version, for easier editing
 		spec.layers[n] = layer
-		if not layer.filename:match('^__base__/graphics/entity/combinator/hr%-decider%-combinator')
-			then error('hr-decider-combinator sprite sheet incompatibility detected') end
+		if not layer.filename:match('^__base__/graphics/entity/combinator/decider%-combinator')
+			then error('decider-combinator sprite sheet incompatibility detected') end
 		if not layer.filename:match('%-shadow%.png$')
 			then layer.filename = png('mlc-sprites')
 			else layer.filename = png('mlc-sprites-shadow') end
 end end
 
--- HR-only symbols from local mlc-displays.png, matching vanilla one in size
+-- normal (previously hr-only) symbols from local mlc-displays.png, matching vanilla one in size
 for prop, sprites in pairs(mlc) do
 	if not prop:match('_symbol_sprites$') then goto skip end
 	for dir, spec in pairs(sprites) do
-		spec, spec.hr_version = spec.hr_version -- only use hr version, for easier editing
 		sprites[dir] = spec
-		if spec.filename ~= '__base__/graphics/entity/combinator/hr-combinator-displays.png'
-			then error('hr-decider-combinator display symbols sprite sheet incompatibility detected') end
+		if spec.filename ~= '__base__/graphics/entity/combinator/combinator-displays.png'
+			then error('decider-combinator display symbols sprite sheet incompatibility detected') end
 		spec.filename = png('mlc-displays')
-		spec.shift = table.deepcopy(decider.greater_symbol_sprites[dir].hr_version.shift)
+		spec.shift = table.deepcopy(decider.greater_symbol_sprites[dir].shift)
 end ::skip:: end
 
 -- Copy values from decider that are different in it from arithmetic
