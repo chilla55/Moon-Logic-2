@@ -114,7 +114,7 @@ data:extend{
 		icon_size = 144,
 		icon = png('tech'),
 		effects={{type='unlock-recipe', recipe='mlc'}},
-		prerequisites = {'circuit-network', 'advanced-electronics'},
+		prerequisites = {'circuit-network', 'advanced-circuit'},
 		unit = {
 		  count = 100,
 		  ingredients = {
