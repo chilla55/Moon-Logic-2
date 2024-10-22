@@ -64,7 +64,7 @@ do
 		{ type = 'constant-combinator',
 			name = 'mlc-core',
 			flags = {'placeable-off-grid'},
-			collision_mask = {},
+			-- collision_mask = {},
 			item_slot_count = 500,
 			circuit_wire_max_distance = 3,
 			sprites = invisible_sprite,
