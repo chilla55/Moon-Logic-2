@@ -939,7 +939,7 @@ local function update_signal_types_table()
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=prototypes.fluid,
-			item=prototypes.get_item_filtered{{filter='flag', flag='hidden', invert=true}} } do
+			item=prototypes.get_item_filtered{{filter='hidden', invert=true}} } do
 		for k, _ in pairs(protos) do
 			sig_str, sig = cn_sig_str(t, k), {type=t, name=k}
 			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
