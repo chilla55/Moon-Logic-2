@@ -59,6 +59,9 @@ local function cn_sig_str(t, name)
 			return name or t
 		else t, name = t.type, t.name end
 	end
+	if not t then
+		return storage.signals_short[name]
+	end
 	return cn_sig_str_prefix[t]..name
 end
 
@@ -785,7 +788,7 @@ local function on_tick(ev)
 		elseif mlc_env._alert then alert_clear(mlc_env) end
 
 		if mlc.irq and (mlc.irq_tick or 0) < tick - (mlc.irq_delay or 0)
-				and mlc.e.get_merged_signal(mlc.irq, defines.circuit_connector_id.combinator_input) ~= 0
+				and mlc.e.get_signal(mlc.irq, defines.wire_connector_id.combinator_input_green, defines.wire_connector_id.combinator_input_red) ~= 0
 			then mlc.irq_tick, mlc.next_tick = tick end
 		if tick >= (mlc.next_tick or 0) and mlc_env._func then
 			run_moon_logic_tick(mlc, mlc_env, tick)
