@@ -57,7 +57,11 @@ local function cn_sig_str(t, name)
 			name = storage.signals_short[t]
 			if name == false then return end -- ambiguous name
 			return name or t
-		else t, name = t.type, t.name end
+		else 
+			if t.type == nil then t.type = 'item' end
+			t, name = t.type, t.name
+
+		end
 	end
 	if not t then
 		return storage.signals_short[name]
@@ -616,6 +620,7 @@ local function update_signals_in_guis()
 			cb = cn_wire_signals(mlc.e, defines.wire_type[k])
 			for sig, v in pairs(cb) do
 				if v == 0 then goto skip end
+				if not sig then goto skip end
 				label = gui_flow.add{
 					type='label', name='in-'..k..'-'..sig,
 					caption=('[%s] %s%s = %s'):format(
@@ -962,13 +967,13 @@ local function update_signal_types_table()
 	local sig_str, sig
 	for k, sig in pairs(prototypes.virtual_signal) do
 		if sig.special then goto skip end -- anything/everything/each
-		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k}
+		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k, quality="normal"}
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=prototypes.fluid,
 			item=prototypes.get_item_filtered{{filter='hidden', invert=true}} } do
 		for k, _ in pairs(protos) do
-			sig_str, sig = cn_sig_str(t, k), {type=t, name=k,  quality="normal"}
+			sig_str, sig = cn_sig_str(t, k), {type=t, name=k, quality="normal"}
 			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
 			storage.signals[sig_str] = sig
 	end end
