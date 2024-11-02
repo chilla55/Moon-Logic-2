@@ -57,7 +57,14 @@ local function cn_sig_str(t, name)
 			name = storage.signals_short[t]
 			if name == false then return end -- ambiguous name
 			return name or t
-		else t, name = t.type, t.name end
+		else 
+			if t.type == nil then t.type = 'item' end
+			t, name = t.type, t.name
+
+		end
+	end
+	if not t then
+		return storage.signals_short[name]
 	end
 	return cn_sig_str_prefix[t]..name
 end
@@ -91,8 +98,14 @@ end
 
 local function cn_wire_signals(e, wire_type, canon)
 	-- Returns signal=count table, with signal names abbreviated where possible
+	local ccid
+	if wire_type == defines.wire_type.green then
+		ccid = defines.wire_connector_id.combinator_input_green
+	elseif wire_type == defines.wire_type.red then
+		ccid = defines.wire_connector_id.combinator_input_red
+	end
 	local res, cn, k = {}, e.get_or_create_control_behavior()
-		.get_circuit_network(wire_type, defines.circuit_connector_id.combinator_input)
+		.get_circuit_network(ccid)
 	for _, sig in pairs(cn and cn.signals or {}) do
 		-- Check for name=nil SignalIDs (dunno what these are), and items w/ flag=hidden
 		if storage.signals_short[sig.signal.name] == nil then goto skip end
@@ -262,17 +275,13 @@ local function mlc_update_output(mlc, output_raw)
 	for _, k in ipairs{'red', 'green'} do
 		ps, ecc = {}, mlc['out_'..k].get_or_create_control_behavior()
 		if not (ecc and ecc.valid) then goto skip end
-		n, n_max = 1, ecc.signals_count
+		n = 1
 		for sig, v in pairs(signals[k]) do
-			ps[n] = {signal=storage.signals[sig], count=v, index=n}
+			ps[n] = {value=storage.signals[sig], min=v}
 			n = n + 1
-			if n > n_max then
-				table.insert( errors,
-					('too many signals (wire=%s max=%d)')
-					:format(conf.get_wire_label(k), n_max) )
-				break
-		end end
-		ecc.enabled, ecc.parameters = true, ps
+		end
+		ecc.enabled = true
+		ecc.get_section(1).filters = ps
 	::skip:: end
 
 	if next(errors) then mlc.err_out = table.concat(errors, ', ') end
@@ -592,7 +601,7 @@ local function signal_icon_tag(sig)
 	local sig = storage.signals[sig]
 	if not sig then return '' end
 	if sig.type == 'virtual' then return '[virtual-signal='..sig.name..'] ' end
-	if game.is_valid_sprite_path(sig.type..'/'..sig.name)
+	if helpers.is_valid_sprite_path(sig.type..'/'..sig.name)
 		then return '[img='..sig.type..'/'..sig.name..'] ' end
 end
 
@@ -611,6 +620,7 @@ local function update_signals_in_guis()
 			cb = cn_wire_signals(mlc.e, defines.wire_type[k])
 			for sig, v in pairs(cb) do
 				if v == 0 then goto skip end
+				if not sig then goto skip end
 				label = gui_flow.add{
 					type='label', name='in-'..k..'-'..sig,
 					caption=('[%s] %s%s = %s'):format(
@@ -622,19 +632,19 @@ local function update_signals_in_guis()
 		mlc_out, mlc_out_idx, mlc_out_err = {}, {}, tc((Combinators[uid] or {})._out or {})
 		for k, cb in pairs{red=mlc.out_red, green=mlc.out_green} do
 			cb = cb.get_control_behavior()
-			for _, cbs in pairs(cb.parameters or {}) do
-				sig, label = cbs.signal.name, conf.get_wire_label(k)
+			for _, cbs in pairs(cb.sections[1].filters or {}) do
+				sig, label = cbs.value.name, conf.get_wire_label(k)
 				if not sig then goto cb_slots_end end
 				mlc_out_err[sig],
 					mlc_out_err[('%s/%s'):format(k, sig)],
 					mlc_out_err[('%s/%s'):format(label, sig)] = nil
-				sig = cn_sig_str(cbs.signal)
+				sig = cn_sig_str(cbs.value)
 				mlc_out_err[sig],
 					mlc_out_err[('%s/%s'):format(k, sig)],
 					mlc_out_err[('%s/%s'):format(label, sig)] = nil
-				if cbs.count ~= 0 then
+				if cbs.min ~= 0 then
 					if not mlc_out[sig] then mlc_out_idx[#mlc_out_idx+1], mlc_out[sig] = sig, {} end
-					mlc_out[sig][k] = cbs.count end
+					mlc_out[sig][k] = cbs.min end
 		end ::cb_slots_end:: end
 		table.sort(mlc_out_idx)
 		for val, k in pairs(mlc_out_idx) do
@@ -783,7 +793,7 @@ local function on_tick(ev)
 		elseif mlc_env._alert then alert_clear(mlc_env) end
 
 		if mlc.irq and (mlc.irq_tick or 0) < tick - (mlc.irq_delay or 0)
-				and mlc.e.get_merged_signal(mlc.irq, defines.circuit_connector_id.combinator_input) ~= 0
+				and mlc.e.get_signal(mlc.irq, defines.wire_connector_id.combinator_input_green, defines.wire_connector_id.combinator_input_red) ~= 0
 			then mlc.irq_tick, mlc.next_tick = tick end
 		if tick >= (mlc.next_tick or 0) and mlc_env._func then
 			run_moon_logic_tick(mlc, mlc_env, tick)
@@ -957,13 +967,13 @@ local function update_signal_types_table()
 	local sig_str, sig
 	for k, sig in pairs(prototypes.virtual_signal) do
 		if sig.special then goto skip end -- anything/everything/each
-		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k}
+		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k, quality="normal"}
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=prototypes.fluid,
 			item=prototypes.get_item_filtered{{filter='hidden', invert=true}} } do
 		for k, _ in pairs(protos) do
-			sig_str, sig = cn_sig_str(t, k), {type=t, name=k}
+			sig_str, sig = cn_sig_str(t, k), {type=t, name=k, quality="normal"}
 			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
 			storage.signals[sig_str] = sig
 	end end
