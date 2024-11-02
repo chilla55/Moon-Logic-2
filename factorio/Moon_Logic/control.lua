@@ -275,7 +275,7 @@ local function mlc_update_output(mlc, output_raw)
 	for _, k in ipairs{'red', 'green'} do
 		ps, ecc = {}, mlc['out_'..k].get_or_create_control_behavior()
 		if not (ecc and ecc.valid) then goto skip end
-		n, n_max = 1, 1
+		n = 1
 		for sig, v in pairs(signals[k]) do
 			ps[n] = {value=storage.signals[sig], min=v}
 			n = n + 1
