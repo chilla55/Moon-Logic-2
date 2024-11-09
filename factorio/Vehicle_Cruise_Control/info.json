@@ -1,9 +1,0 @@
-{
-	"name": "Vehicle_Cruise_Control",
-	"version": "0.0.9",
-	"factorio_version": "1.1",
-	"dependencies": ["base >= 0.17.0"],
-	"title": "Vehicle Cruise Control",
-	"author": "mk-fg",
-	"description": "Adds GUI with buttons to toggle acceleration and brakes, so that you don't have to hold W or S."
-}

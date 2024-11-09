@@ -1,9 +1,0 @@
-{
-	"name": "Burner_Drill_4x4_Area",
-	"version": "0.0.7",
-	"factorio_version": "1.1",
-	"dependencies": ["base >= 0.16.0"],
-	"title": "Burner Drill 4x4 Area",
-	"author": "mk-fg",
-	"description": "Changes Burner Mining Drills to have 4x4 drilling area instead of default 2x2 (right under)."
-}

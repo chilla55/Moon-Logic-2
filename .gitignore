@@ -16,3 +16,5 @@
 # Ignore all local history of files
 .history
 .ionide
+launch.json
+settings.json
