@@ -215,7 +215,7 @@ Huge thanks to [smartguy1196](https://mods.factorio.com/user/smartguy1196) for d
 ## Links
 
 
-- [Frequently Asked Questions (FAQ) page](https://mods.factorio.com/mod/Moon_Logic/faq) has more info on this mod.
+- [Frequently Asked Questions (FAQ) page](https://mods.factorio.com/mod/Moon_Logic_2/faq) has more info on this mod.
 &nbsp;
 
 - Nice and useful Circuit Network extensions:
