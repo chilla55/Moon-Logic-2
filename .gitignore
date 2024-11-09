@@ -19,3 +19,4 @@
 launch.json
 settings.json
 *.zip
+.mods/
