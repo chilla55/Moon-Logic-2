@@ -1,4 +1,4 @@
-local function png(name) return ('__Moon_Logic__/graphics/%s.png'):format(name) end
+local function png(name) return ('__Moon_Logic_2__/graphics/%s.png'):format(name) end
 
 
 -- ----- Main combinator entity
