@@ -49,6 +49,20 @@ end
 
 -- ----- Circuit network controls -----
 
+local function cn_sig_quality(sig_str)
+	-- removes quality prefix from signal string, returns signal name and quality
+	if not sig_str then return end
+	local q_name = ""
+	for _, q in pairs(storage.quality) do
+		if string.match(sig_str, "^"..q) then
+			q_name = q
+			break
+		end
+	end
+	if q_name == "" then return sig_str end
+	return string.gsub(sig_str, q_name.."/", ''), q_name
+end
+
 local cn_sig_str_prefix = {item='#', fluid='=', virtual='@'}
 local function cn_sig_str(t, name)
 	-- Translates name or type/name or signal to its type-prefixed string-id
@@ -59,14 +73,17 @@ local function cn_sig_str(t, name)
 			return name or t
 		else 
 			if t.type == nil then t.type = 'item' end
-			t, name = t.type, t.name
+			name = t.name
 
 		end
 	end
 	if not t then
 		return storage.signals_short[name]
 	end
-	return cn_sig_str_prefix[t]..name
+	if t.quality ~= "normal" and t.quality ~= nil then
+		return t.quality.."/"..cn_sig_str_prefix[t.type]..name
+	end
+	return cn_sig_str_prefix[t.type or t]..name
 end
 
 local function cn_sig_name(sig_str)
@@ -80,9 +97,15 @@ local function cn_sig_name(sig_str)
 end
 
 local function cn_sig(k, err_level)
-	local sig = storage.signals_short[k]
+	local signame, qname = cn_sig_quality(k)
+	local sig = storage.signals_short[signame or k]
 	if type(sig) ~= false then sig = storage.signals[sig or k] end
-	if sig then return sig end
+	if sig and qname ~="" then
+		sig.quality = qname
+		return sig
+	elseif sig then
+		return sig
+	end
 	if not err_level then return end
 	if sig == false then
 		local m = {}
@@ -110,6 +133,8 @@ local function cn_wire_signals(e, wire_type, canon)
 		-- Check for name=nil SignalIDs (dunno what these are), and items w/ flag=hidden
 		if storage.signals_short[sig.signal.name] == nil then goto skip end
 		if canon then k = cn_sig_str(sig.signal)
+		elseif sig.signal.quality ~= nil then
+			k = sig.signal.quality.."/"..storage.signals_short[sig.signal.name] and sig.signal.quality.."/"..sig.signal.name or cn_sig_str(sig.signal)
 		else k = storage.signals_short[sig.signal.name]
 			and sig.signal.name or cn_sig_str(sig.signal) end
 		res[k] = sig.count
@@ -122,6 +147,11 @@ local function cn_input_signal(wenv, wire_type, k)
 	if wenv._cache_tick ~= game.tick then
 		signals = cn_wire_signals(wenv._e, wire_type, true)
 		wenv._cache, wenv._cache_tick = signals, game.tick
+	end
+	if k and #storage.quality ~= 0 then
+		local signame, q_name = cn_sig_quality(k)
+		signals = signals[q_name.."/"..cn_sig_str(cn_sig(signame, 4))]
+		return signals
 	end
 	if k then signals = signals[cn_sig_str(cn_sig(k, 4))] end
 	return signals
@@ -271,13 +301,18 @@ local function mlc_update_output(mlc, output_raw)
 	for sig, _ in pairs(sig_err)
 		do table.insert(errors, ('unknown signal [%s]'):format(sig)) end
 
-	local ps, ecc, n, n_max
+	local ps, ecc, n
 	for _, k in ipairs{'red', 'green'} do
 		ps, ecc = {}, mlc['out_'..k].get_or_create_control_behavior()
 		if not (ecc and ecc.valid) then goto skip end
 		n = 1
 		for sig, v in pairs(signals[k]) do
-			ps[n] = {value=storage.signals[sig], min=v}
+			local qname = ""
+			sig,qname = cn_sig_quality(sig)
+			ps[n] = {value={name = "", quality = "", type = ""}, min=v}
+			ps[n].value.name = storage.signals[sig].name
+			ps[n].value.type = storage.signals[sig].type
+			ps[n].value.quality = qname or "normal"
 			n = n + 1
 		end
 		ecc.enabled = true
@@ -605,6 +640,12 @@ local function signal_icon_tag(sig)
 		then return '[img='..sig.type..'/'..sig.name..'] ' end
 end
 
+local function quality_icon_tag(qname)
+	if not qname then return '' end
+	if helpers.is_valid_sprite_path('quality/'..qname)
+		then return '[img=quality/'..qname..']' end
+end
+
 local function update_signals_in_guis()
 	local gui_flow, label, mlc, cb, sig, mlc_out, mlc_out_idx, mlc_out_err
 	local colors = {red={1,0.3,0.3}, green={0.3,1,0.3}}
@@ -621,10 +662,15 @@ local function update_signals_in_guis()
 			for sig, v in pairs(cb) do
 				if v == 0 then goto skip end
 				if not sig then goto skip end
+				local signame, qname = cn_sig_quality(sig)
+				local icon = signal_icon_tag(cn_sig_str(signame))
+				if qname then
+					icon = quality_icon_tag(qname) .. icon
+				end
 				label = gui_flow.add{
 					type='label', name='in-'..k..'-'..sig,
 					caption=('[%s] %s%s = %s'):format(
-						conf.get_wire_label(k), signal_icon_tag(cn_sig_str(sig)), sig, v ) }
+						conf.get_wire_label(k), icon, sig, v ) }
 				label.style.font_color = color
 		::skip:: end end
 
@@ -635,6 +681,9 @@ local function update_signals_in_guis()
 			for _, cbs in pairs(cb.sections[1].filters or {}) do
 				sig, label = cbs.value.name, conf.get_wire_label(k)
 				if not sig then goto cb_slots_end end
+				if cbs.value.quality ~= nil and cbs.value.quality ~= "normal" then
+					sig = cbs.value.quality.."/"..sig
+				end
 				mlc_out_err[sig],
 					mlc_out_err[('%s/%s'):format(k, sig)],
 					mlc_out_err[('%s/%s'):format(label, sig)] = nil
@@ -648,7 +697,12 @@ local function update_signals_in_guis()
 		end ::cb_slots_end:: end
 		table.sort(mlc_out_idx)
 		for val, k in pairs(mlc_out_idx) do
-			val, sig, label = mlc_out[k], storage.signals[k].name, signal_icon_tag(k)
+			local signame, qname = cn_sig_quality(k)
+			val, sig, label = mlc_out[k], storage.signals[signame].name, signal_icon_tag(signame)
+			if qname then
+				label = quality_icon_tag(qname) .. label
+				sig = qname.."/"..sig
+			end
 			if val['red'] == val['green'] then
 				gui_flow.add{ type='label', name='out-'..sig,
 					caption=('[out] %s%s = %s'):format(label, sig, val['red'] or 0) }
@@ -979,6 +1033,13 @@ local function update_signal_types_table()
 	end end
 end
 
+local function update_signal_quality_table()
+	storage.quality = {}
+	for t,_ in pairs(prototypes.quality) do
+		table.insert(storage.quality, t)
+	end
+end
+
 local function update_recipes()
 	for _, force in pairs(game.forces) do
 		if force.technologies['mlc'].researched then
@@ -988,12 +1049,14 @@ end
 
 script.on_init(function()
 	strict_mode_enable()
+	update_signal_quality_table()
 	update_signal_types_table()
 	for k, _ in pairs(tt('combinators presets guis guis_player')) do storage[k] = {} end
 end)
 
 script.on_configuration_changed(function(data) -- migration
 	strict_mode_enable()
+	update_signal_quality_table()
 	update_signal_types_table()
 
 	local update = data.mod_changes and data.mod_changes[script.mod_name]
