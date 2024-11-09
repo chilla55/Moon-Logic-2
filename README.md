@@ -282,7 +282,7 @@ Huge thanks to [smartguy1196](https://mods.factorio.com/user/smartguy1196) for d
         Kinda like fCPU and MicroController as a starting point, but with extensible architecture, power management and peripherals.
         &nbsp;
 
-- [Github repo link](https://github.com/chilla55/Moon-Logic)
+- [Github repo link](https://github.com/chilla55/Moon-Logic-2)
 - [Original Github repo link](https://github.com/mk-fg/games/tree/master/factorio/Moon_Logic)
 
 &nbsp;
