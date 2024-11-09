@@ -202,6 +202,10 @@ Regular combinators are best for simple things, as they work ridiculously fast o
 
 Huge thanks to [ixu](https://mods.factorio.com/user/ixu) and [completion](https://mods.factorio.com/user/completion) for testing the mod extensively and reporting dozens of bugs here.
 
+Original Creator [mk-fg](https://mods.factorio.com/user/mk-fg)
+
+Huge thanks to [smartguy1196](https://mods.factorio.com/user/smartguy1196) for doing most of the porting to Factorio version 2.0.
+
 &nbsp;
 
 --------------------
@@ -278,7 +282,8 @@ Huge thanks to [ixu](https://mods.factorio.com/user/ixu) and [completion](https:
         Kinda like fCPU and MicroController as a starting point, but with extensible architecture, power management and peripherals.
         &nbsp;
 
-- [Github repo link](https://github.com/mk-fg/games/tree/master/factorio/Moon_Logic)
+- [Github repo link](https://github.com/chilla55/Moon-Logic)
+- [Original Github repo link](https://github.com/mk-fg/games/tree/master/factorio/Moon_Logic)
 
 &nbsp;
 
