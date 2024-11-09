@@ -18,3 +18,4 @@
 .ionide
 launch.json
 settings.json
+./*.zip
