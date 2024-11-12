@@ -88,10 +88,12 @@ end
 
 local function cn_sig_name(sig_str)
 	-- Returns abbreviated signal name without prefix
-	local k = sig_str:sub(2)
+	local signame, qname = cn_sig_quality(sig_str)
+	local k = signame:sub(2)
 	local sig_str2 = storage.signals_short[k]
 	if sig_str2 == false then return sig_str
 	elseif sig_str2 == sig_str then return k
+	elseif qname ~= nil and qname.."/"..sig_str2 == sig_str then return qname.."/"..k
 	elseif not sig_str2 then error(('MOD BUG - abbreviation for invalid signal string: %s'):format(sig_str))
 	else error(('MOD BUG - signal string/abbrev mismatch: %s != %s'):format(sig_str, sig_str2)) end
 end
@@ -150,6 +152,10 @@ local function cn_input_signal(wenv, wire_type, k)
 	end
 	if k and #storage.quality ~= 0 then
 		local signame, q_name = cn_sig_quality(k)
+		if q_name == nil or q_name == "normal" then
+			signals = signals[cn_sig_str(cn_sig(signame, 4))]
+			return signals
+		end
 		signals = signals[q_name.."/"..cn_sig_str(cn_sig(signame, 4))]
 		return signals
 	end

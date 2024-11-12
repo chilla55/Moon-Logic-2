@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.3
-Date: ????
-  Changes:
+Date: 2024-11-12
+  Bugfixes:
+    - Fixed pairs(red/green) not outputting quality signals
+    - Fixed normal prefix of signals nor returning normal quality signals
+    - Fixed concatenate on a nil value on signals
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.2
 Date: 2024-11-09
