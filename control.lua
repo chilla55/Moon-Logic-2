@@ -438,7 +438,7 @@ local function mlc_init(e)
 			print=sandbox_game_print, print_color=game.print }
 		sandbox_env_base._api = { game=game, script=script,
 			remote=remote, commands=commands, settings=settings,
-			rcon=rcon, rendering=rendering, global=storage, defines=defines }
+			rcon=rcon, rendering=rendering, global=storage, defines=defines, prototypes=prototypes }
 		sandbox_env_pairs_mt_iter[cn_input_signal_get] = true
 		sandbox_env_base._init = true
 	end
@@ -674,7 +674,7 @@ local function update_signals_in_guis()
 					icon = quality_icon_tag(qname) .. icon
 				end
 				label = gui_flow.add{
-					type='label', name='in-'..k..'-'..sig,
+					type='label', name='mlc-sig-in-'..k..'-'..sig,
 					caption=('[%s] %s%s = %s'):format(
 						conf.get_wire_label(k), icon, sig, v ) }
 				label.style.font_color = color
@@ -710,10 +710,10 @@ local function update_signals_in_guis()
 				sig = qname.."/"..sig
 			end
 			if val['red'] == val['green'] then
-				gui_flow.add{ type='label', name='out-'..sig,
+				gui_flow.add{ type='label', name='mlc-sig-out-'..sig,
 					caption=('[out] %s%s = %s'):format(label, sig, val['red'] or 0) }
 			else for k, color in pairs(colors) do
-				k = gui_flow.add{ type='label', name='out/'..k..'-'..sig,
+				k = gui_flow.add{ type='label', name='mlc-sig-out/'..k..'-'..sig,
 					caption=('[out/%s] %s%s = %s'):format(conf.get_wire_label(k), label, sig, val[k] or 0) }
 				k.style.font_color = color
 		end end end
@@ -724,7 +724,7 @@ local function update_signals_in_guis()
 			cb, val = pcall(serpent.line, val, {compact=true, nohuge=false})
 			if not cb then val = '<err>' end
 			if val:len() > 8 then val = val:sub(1, 8)..'+' end
-			gui_flow.add{ type='label', name=('out/err-%d-%s'):format(n, sig),
+			gui_flow.add{ type='label', name=('mlc-sig-out/err-%d-%s'):format(n, sig),
 				caption=('[color=#ce9f7f][out-invalid] %s = %s[/color]'):format(sig, val) }
 			n = n + 1
 		end
