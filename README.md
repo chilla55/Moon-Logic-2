@@ -168,6 +168,49 @@ REoTMhuDqH5D6CURIEMhslfTsI1eWhEVLBX4dCdto+hlT3vy7ieDEZH+9c7LBLM+KnOYYU0K1fgMg+xd
 
 ----------
 
+**-- Autocrafter: machine, that keep crafting any items by signal**
+
+----------
+```
+local minw=99999;
+local item;
+for s,v in pairs(red) do
+  if(green[s]<red[s]) then
+    local w=_api.game.players[1].force.recipes[s].energy
+    if(w<minw) then
+      item=s;
+      minw=w;
+    end
+  end
+end
+out={}
+if(item) then
+  out[item]=1;
+  delay=minw*60
+  if delay<1000 then delay=1000 end
+  if delay>5000 then delay=5000 end
+else
+  delay=1000
+end
+```
+This cycles items in red signal (from combinator in example), filters items that less in chest, then selects one recipe of one most basic item to craft. So you can use one assembling machine to craft a lot of items one by one or use several assembling machine with huge chests
+```
+0eNqllf9uozAMx18F5a/tFBBQ6NZu3It0FUqDS6MLCZeE9aqq734OtHQ/2LRprdQmjv3JF8cmR7KRHbR
+GKEeWRyK4VpYsV0diRa2Y9DbFGiBLwqyFZiOFqsOG8Z1QEKbkRIlQFfwjy+S0pgSUE07AQOgnh1J1zQY
+MOtALSSgLxqGNklZbDNDK74OQMI1ySg44SLIoR3glDPDBIUlP9B00vUKNViHfgXUT2OQVdoIzGzk+AY4
+pF3LdbIRiTk/ojD+WeU89whktyw3s2LPAeAyyw7p9PcYsXdJHyVZITMpb6yirbcGEnG0koJ6/HZOoHxe
+UNg2ek9+1aZnp9S5J0Rs6f6hJHPsHPhPfJKwGZsL9DkB+D5q/ZF6TBxIfDbmCh1wY3gn3A2w2YqWuhXU
+ItVyA4hC2jP/5SRYWI9oZpmyrjQs3IH+iNomn6vt7tDV+p6oz+0rrzMaanL2ryQlm/hVm8oo5QZmPlEb
+yz/pk9qUuYUa4XQN41CUuV2Jsma0w1pWX3sRsJ/fpPaYFWwn9XizgKWhsFDZsQ0KCqoljdU9BjehaDSX
+FmQwaofbFwn8entRgEg4anGy1CSx9DoQKWoab3xioboNKP6kgENub2gColV0/ohn/bgO3A+XXgmDA7Iu
+StSKqMTlRK9kBG3uVrCPEcogwDaIFi4ERKDD1YYhE7v7RS3qJC3pFhX24THvN+/MUVOUH/V//oztXHE9
+PClk+7krChZW3rIukj60AVRUe9mseD0812B6xVeI+7OzTz88bXZx+52+c8tEJpIXrBj64l0amyueOfnq
+7fHY/JH2RT79qXTlkmCyd6QDdLtMP3ySDQ/muXf2ltsey9W/lVUpTOqfpmq5mNMFRgqM5zegd2tDPZxc
+jr/cpJc947L36fJ4ussUiz7I4m+Xz0+k/y3d2sg==
+```
+
+----------
+
 **-- What is all this dark magic?**
 
 ----------
