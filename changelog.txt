@@ -1,8 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.5
-Date: ????
+Date: 2024-11-21
   Bugfixes:
     - Fixed Recipe signals not working
+    - Fixed signal retrival in cn_sig
   Features:
     - Added a ui to copy signals
 ---------------------------------------------------------------------------------------------------
