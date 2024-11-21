@@ -101,7 +101,7 @@ end
 local function cn_sig(k, err_level)
 	local signame, qname = cn_sig_quality(k)
 	local sig = storage.signals_short[signame or k]
-	if type(sig) ~= false then sig = storage.signals[sig or k] end
+	if type(sig) ~= false then sig = storage.signals[sig or signame] end
 	if sig and qname ~="" then
 		sig.quality = qname
 		return sig
