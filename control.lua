@@ -63,7 +63,7 @@ local function cn_sig_quality(sig_str)
 	return string.gsub(sig_str, q_name.."/", ''), q_name
 end
 
-local cn_sig_str_prefix = {item='#', fluid='=', virtual='@'}
+local cn_sig_str_prefix = {item='#', fluid='=', virtual='@', recipe='~'}
 local function cn_sig_str(t, name)
 	-- Translates name or type/name or signal to its type-prefixed string-id
 	if not name then
@@ -135,6 +135,10 @@ local function cn_wire_signals(e, wire_type, canon)
 		-- Check for name=nil SignalIDs (dunno what these are), and items w/ flag=hidden
 		if storage.signals_short[sig.signal.name] == nil then goto skip end
 		if canon then k = cn_sig_str(sig.signal)
+		elseif sig.signal.quality ~= nil and sig.signal.type == 'recipe' then
+			k = sig.signal.quality.."/~"..storage.signals_short[sig.signal.name] and sig.signal.quality.."/~"..sig.signal.name or "~"..cn_sig_str(sig.signal)
+		elseif sig.signal.type == 'recipe' then
+			k = "~"..storage.signals_short[sig.signal.name] and "~"..sig.signal.name or "~"..cn_sig_str(sig.signal)
 		elseif sig.signal.quality ~= nil then
 			k = sig.signal.quality.."/"..storage.signals_short[sig.signal.name] and sig.signal.quality.."/"..sig.signal.name or cn_sig_str(sig.signal)
 		else k = storage.signals_short[sig.signal.name]
@@ -705,6 +709,9 @@ local function update_signals_in_guis()
 		for val, k in pairs(mlc_out_idx) do
 			local signame, qname = cn_sig_quality(k)
 			val, sig, label = mlc_out[k], storage.signals[signame].name, signal_icon_tag(signame)
+			if string.sub(signame,1,1)== '~' then
+				sig = "~"..sig
+			end
 			if qname then
 				label = quality_icon_tag(qname) .. label
 				sig = qname.."/"..sig
@@ -1027,7 +1034,7 @@ local function update_signal_types_table()
 	local sig_str, sig
 	for k, sig in pairs(prototypes.virtual_signal) do
 		if sig.special then goto skip end -- anything/everything/each
-		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k, quality="normal"}
+		sig_str, sig = cn_sig_str('virtual', k), {type'virtual', name=k, quality="normal"}
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=prototypes.fluid,
@@ -1037,6 +1044,13 @@ local function update_signal_types_table()
 			storage.signals_short[k] = storage.signals_short[k] == nil and sig_str or false
 			storage.signals[sig_str] = sig
 	end end
+	for t, k in pairs(prototypes.recipe) do
+		sig_str, sig = cn_sig_str('recipe', t), {type='recipe', name=t, quality="normal"}
+		if storage.signals_short[t] == nil then
+			storage.signals_short[t] = sig_str
+		end
+		storage.signals[sig_str] = sig
+	end
 end
 
 local function update_signal_quality_table()
