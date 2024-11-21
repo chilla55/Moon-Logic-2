@@ -1,5 +1,5 @@
 local conf = require('config')
-
+local cgui = require('cgui')
 
 local function help_window_toggle(pn, toggle_on)
 	local player = game.players[pn]
@@ -426,7 +426,8 @@ function guis.on_gui_click(ev)
 	local el = ev.element
 
 	-- Separate "help" and "vars" windows, not tracked in globals (storage), unlike main MLC guis
-	if el.name == 'mlc-help-close' then return el.parent.destroy()
+	if el.name == 'mlc-copy-close' then return cgui.close()
+	elseif el.name == 'mlc-help-close' then return el.parent.destroy()
 	elseif el.name == 'mlc-vars-close' then
 		return (el.parent.parent or el.parent).destroy()
 	elseif el.name == 'mlc-vars-pause' then
@@ -436,7 +437,7 @@ function guis.on_gui_click(ev)
 		local textfield = ev.element.parent.parent.parent.children[1].children[2]
 		local catption = string.match(el.caption,"%[%a+%]%s%[%a+=.-%]%s(.-)%s=%s%d+")
 		if catption ~= nil then
-			textfield.text = textfield.text..catption
+			cgui.open(game.players[ev.player_index], catption)
 		end
 	end
 

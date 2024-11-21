@@ -3,6 +3,8 @@ Version: 0.1.5
 Date: ????
   Bugfixes:
     - Fixed Recipe signals not working
+  Features:
+    - Added a ui to copy signals
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 2024-11-12
