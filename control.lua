@@ -647,6 +647,7 @@ local function signal_icon_tag(sig)
 	local sig = storage.signals[sig]
 	if not sig then return '' end
 	if sig.type == 'virtual' then return '[virtual-signal='..sig.name..'] ' end
+	if (sig.type == nil)then return ""	end
 	if helpers.is_valid_sprite_path(sig.type..'/'..sig.name)
 		then return '[img='..sig.type..'/'..sig.name..'] ' end
 end
@@ -1035,7 +1036,7 @@ local function update_signal_types_table()
 	local sig_str, sig
 	for k, sig in pairs(prototypes.virtual_signal) do
 		if sig.special then goto skip end -- anything/everything/each
-		sig_str, sig = cn_sig_str('virtual', k), {type'virtual', name=k, quality="normal"}
+		sig_str, sig = cn_sig_str('virtual', k), {type='virtual', name=k, quality="normal"}
 		storage.signals_short[k], storage.signals[sig_str] = sig_str, sig
 	::skip:: end
 	for t, protos in pairs{ fluid=prototypes.fluid,
