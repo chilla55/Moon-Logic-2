@@ -684,6 +684,7 @@ local function update_signals_in_guis()
 					caption=('[%s] %s%s = %s'):format(
 						conf.get_wire_label(k), icon, sig, v ) }
 				label.style.font_color = color
+				label.tags = {signal=sig}
 		::skip:: end end
 
 		-- Outputs
@@ -719,12 +720,14 @@ local function update_signals_in_guis()
 				sig = qname.."/"..sig
 			end
 			if val['red'] == val['green'] then
-				gui_flow.add{ type='label', name='mlc-sig-out-'..sig,
+				k = gui_flow.add{ type='label', name='mlc-sig-out-'..sig,
 					caption=('[out] %s%s = %s'):format(label, sig, val['red'] or 0) }
+				k.tags = {signal=sig}
 			else for k, color in pairs(colors) do
 				k = gui_flow.add{ type='label', name='mlc-sig-out/'..k..'-'..sig,
 					caption=('[out/%s] %s%s = %s'):format(conf.get_wire_label(k), label, sig, val[k] or 0) }
 				k.style.font_color = color
+				k.tags = {signal=sig}
 		end end end
 
 		-- Remaining invalid signals and errors

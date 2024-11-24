@@ -434,10 +434,8 @@ function guis.on_gui_click(ev)
 		return vars_window_switch_or_toggle( ev.player_index,
 			vars_window_uid(el), el.style.name ~= 'green_button', true )
 	elseif string.sub(el.name,1,8) == "mlc-sig-" then
-		local textfield = ev.element.parent.parent.parent.children[1].children[2]
-		local catption = string.match(el.caption,"%[%a+%]%s%[%a+=.-%]%s(.-)%s=%s%d+")
-		if catption ~= nil then
-			cgui.open(game.players[ev.player_index], catption)
+		if (ev.element.tags["signal"] ~= nil) then
+			cgui.open(game.players[ev.player_index], ev.element.tags["signal"])
 		end
 	end
 

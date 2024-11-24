@@ -9,7 +9,7 @@ local function create_copy_gui(player)
     gui.location = {20 * dsf, 150 * dsf}
     local tb = gui.add({type='text-box', name='mlc-copy-text', text=''})
     tb.style.width = 200
-    tb.style.height = 25
+    tb.style.height = 30
     local close_btn = gui.add({type='button', name='mlc-copy-close', caption='Close'})
     close_btn.style.minimal_width = 50
     return {gui=gui, tb=tb, close_btn=close_btn}
