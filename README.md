@@ -7,6 +7,16 @@ Mod code uses things which are likely to desync mp games, and I only test single
 
 --------------------
 
+**Important: Lua functions are not supported.**
+
+Due to the savegame serialization of Factorio, Lua functions cannot be used in this mod.
+
+&nbsp;
+
+--------------------
+
+--------------------
+
 ## Description
 
 Adds Moon Logic Combinator that runs Lua code that can read red/green wire signal inputs and set outputs.
