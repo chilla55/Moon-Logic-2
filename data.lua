@@ -134,7 +134,7 @@ data:extend{
 		order = '02' },
 	{ type = 'custom-input',
 		name = 'mlc-code-save',
-		key_sequence = 'CONTROL + S',
+		key_sequence = 'CONTROL + SHIFT + S',
 		order = '03' },
 	{ type = 'custom-input',
 		name = 'mlc-code-commit',
