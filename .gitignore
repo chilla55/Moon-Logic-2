@@ -20,3 +20,5 @@ launch.json
 settings.json
 *.zip
 .mods/
+
+.luarc.json
