@@ -54,7 +54,7 @@ local function cn_sig_quality(sig_str)
 	if not sig_str then return end
 	local q_name = ""
 	for _, q in pairs(storage.quality) do
-		if string.match(sig_str, "^"..q) then
+		if string.match(sig_str, q.."/") then
 			q_name = q
 			break
 		end
