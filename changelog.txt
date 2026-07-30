@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.12
-Date: ????
+Date: 2026-07-30
   Changes:
+    - Removed the Ctrl-S hotkey for saving code, can still be set via Settings -> Controls -> Mods -> Moon Logic 2 -> Save
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.11
 Date: 2026-07-30
